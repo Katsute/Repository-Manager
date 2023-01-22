@@ -4,15 +4,6 @@ on:
     secrets:
       token:
         required: true
-  workflow_dispatch:
-  create:
-  issues:
-    types: [opened, reopened, closed]
-  pull_request:
-    branches: [main]
-    types: [opened, reopened, closed]
-  release:
-    types: [created, published]
 
 jobs:
   debug:
@@ -30,10 +21,27 @@ jobs:
           github-token: ${{ secrets.token }}
           script: core.info(require("util").inspect(context, true, 6));
 
+  create:
+    name: Branch Rename
+    runs-on: ubuntu-latest
+    if: github.event_name == 'create'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Parse Branch
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            // todo: get SHA
+
   issue:
     name: Issue Locking
     runs-on: ubuntu-latest
-    if: github.event_name == "issues"
+    if: github.event_name == 'issues'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
