@@ -59,7 +59,8 @@ jobs:
           branch: ${{ env.branch }}
         run: |
           git branch -c $ref $branch
-          git branch -D $ref
+          git checkout $branch
+          git branch -d $ref
           git push origin HEAD
 
       - name: Create Orphan Branch
@@ -68,8 +69,8 @@ jobs:
           ref: ${{ env.ref }}
           branch: ${{ env.branch }}
         run: |
-          git branch -D $ref
           git checkout --orphan $branch
+          git branch -d $ref
           git rm -rf .
           git commit --allow-empty -m 'Initial commit'
           git push origin HEAD
