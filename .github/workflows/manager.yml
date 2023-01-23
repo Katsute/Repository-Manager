@@ -2,6 +2,9 @@ name: Repository Manager
 on:
   workflow_call:
     inputs:
+      login:
+        type: string
+        required: true
       username:
         type: string
         required: true
@@ -32,7 +35,7 @@ jobs:
   comment:
     name: Commands
     runs-on: ubuntu-latest
-    if: |
+    if: >-
       github.event_name == 'issue_comment' &&
       (github.comment.author_association == 'COLLABORATOR' ||
        github.comment.author_association == 'MEMBER' ||
@@ -46,14 +49,16 @@ jobs:
       - name: Parse Comment
         uses: actions/github-script@v6
         env:
+          login: ${{ inputs.login }}
           comment: ${{ github.comment.body }}
         with:
           github-token: ${{ secrets.token }}
           script: |
+            const login = process.env.login;
             const comment = process.env.comment;
 
-            if(comment.startsWith('/')){
-              const parts = comment.substring(1).split(' ');
+            if(comment.startsWith(`@${login}`)){
+              const parts = comment.split(' ').slice(1);
               core.exportVariable("command", parts[0].toLowerCase());
               core.exportVariable("args", parts.slice(1).join(' '));
             }
@@ -70,7 +75,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           WORKFLOW: ${{ env.args }}
-        run: gh workflow run $WORKFLOW
+          ACTOR: ${{ github.sender.login }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
+          NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          gh workflow run $WORKFLOW
+          gh $ISSUE comment -b "@$ACTOR dispatched workflow ['${WORKFLOW}''](https://github.com/${REPO}/actions/workflows/${WORKFLOW})"
 
       - name: Dispatch Workflow (pull)
         if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.pull_request
@@ -78,7 +89,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.token }}
           WORKFLOW: ${{ env.args }}
           REF: ${{ github.event.pull_request.head.ref }}
-        run: gh workflow run $WORKFLOW --ref $REF
+          ACTOR: ${{ github.sender.login }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
+          NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          gh workflow run $WORKFLOW --ref $REF
+          gh $ISSUE comment -b "@$ACTOR dispatched workflow ['${WORKFLOW}''](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
 
       - name: Review PR (approve)
         if: env.command == 'approve' && github.event.pull_request
