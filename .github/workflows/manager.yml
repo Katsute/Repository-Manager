@@ -64,9 +64,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           TITLE: ${{ env.args }}
-        run: gh issue create -t "$TITLE"
+        run: gh issue create -t "$TITLE" -b  ""
 
-      - name: Dispatch Workflow (main)
+      - name: Dispatch Workflow
         if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
