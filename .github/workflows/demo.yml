@@ -7,6 +7,8 @@ on:
   pull_request:
     branches: [main]
     types: [opened, reopened, closed]
+  issue_comment:
+    types: [created]
   release:
     types: [created, published]
 
@@ -20,5 +22,8 @@ jobs:
       github.actor != 'mashiro-san' &&
       !endsWith(github.actor, '[bot]')
       }}
+    with:
+      username: Mashiro
+      email: 107276926+mashiro-san@users.noreply.github.com
     secrets:
       token: ${{ secrets.token }}

@@ -1,6 +1,13 @@
 name: Repository Manager
 on:
   workflow_call:
+    inputs:
+      username:
+        type: string
+        required: true
+      email:
+        type: string
+        required: true
     secrets:
       token:
         required: true
@@ -21,6 +28,73 @@ jobs:
         with:
           github-token: ${{ secrets.token }}
           script: core.info(require("util").inspect(context, true, 6));
+
+  comment:
+    name: Commands
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issue_comment' &&
+      (github.comment.author_association == 'COLLABORATOR' ||
+       github.comment.author_association == 'MEMBER' ||
+       github.comment.author_association == 'OWNER')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Parse Comment
+        uses: actions/github-script@v6
+        env:
+          comment: ${{ github.comment.body }}
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            const comment = process.env.comment;
+
+            if(comment.startsWith('/')){
+              const parts = comment.split(' ');
+              core.exportVariable("command", parts[0]);
+              core.exportVariable("args", parts.slice(1).join(' '));
+            }
+
+      - name: Create Issue
+        if: env.command == 'issue'
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          TITLE: ${{ env.args }}
+        run: gh issue create -t "$TITLE"
+
+      - name: Dispatch Workflow (main)
+        if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          WORKFLOW: ${{ env.args }}
+        run: gh workflow run $WORKFLOW
+
+      - name: Dispatch Workflow (pull)
+        if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          WORKFLOW: ${{ env.args }}
+          REF: ${{ github.event.pull_request.head.ref }}
+        run: gh workflow run $WORKFLOW --ref $REF
+
+      - name: Review PR (approve)
+        if: env.command == 'approve' && github.event.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          MESSAGE: ${{ env.args }}
+        run: gh pr review $NUMBER --approve --comment --body "$MESSAGE"
+
+      - name: Review PR (reject)
+        if: env.command == 'reject' && github.event.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          MESSAGE: ${{ env.args }}
+        run: gh pr review $NUMBER --request-changes --body "$MESSAGE"
 
   create:
     name: Branch Rename
@@ -57,9 +131,11 @@ jobs:
         env:
           ref: ${{ env.ref }}
           branch: ${{ env.branch }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
         run: |
-          git config --global user.name "Mashiro"
-          git config --global user.email "107276926+mashiro-san@users.noreply.github.com"
+          git config --global user.name "$name"
+          git config --global user.email "$email"
 
           git checkout -b $branch
           git push origin HEAD
@@ -71,9 +147,11 @@ jobs:
         env:
           ref: ${{ env.ref }}
           branch: ${{ env.branch }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
         run: |
-          git config --global user.name "Mashiro"
-          git config --global user.email "107276926+mashiro-san@users.noreply.github.com"
+          git config --global user.name "$name"
+          git config --global user.email "$email"
 
           git checkout --orphan $branch
           git rm -rf .
@@ -99,3 +177,19 @@ jobs:
           NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
           LOCK: ${{ github.event.action == 'closed' && 'lock' || 'unlock' }}
         run: gh $ISSUE $LOCK $NUMBER
+
+  label:
+    name: Label Sync
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.repository != 'Katsute/Repository-Manager'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Sync Labels
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          REPO: ${{ github.repository }}
+        run: gh label clone Katsute/Repository-Manager --repo $REPO -f
