@@ -53,7 +53,7 @@ jobs:
 
       - name: Create SHA Branch
         if: env.type == 'sha'
-        with:
+        env:
           ref: ${{ github.ref }}
           branch: ${{ env.branch }}
         run: |
@@ -62,9 +62,11 @@ jobs:
 
       - name: Create Orphan Branch
         if: env.type == 'orphan'
-        with:
+        env:
+          ref: ${{ github.ref }}
           branch: ${{ env.branch }}
         run: |
+          git branch -d $ref
           git checkout --orphan $branch
           git rm -rf .
           git commit --allow-empty -m 'Initial commit'
