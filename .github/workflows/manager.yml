@@ -84,7 +84,7 @@ jobs:
           ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
         run: |
           gh workflow run $WORKFLOW
-          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow ['${WORKFLOW}'](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
+          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
 
       - name: Dispatch Workflow (pull)
         if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.pull_request
@@ -98,7 +98,7 @@ jobs:
           ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
         run: |
           gh workflow run $WORKFLOW --ref $REF
-          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow ['${WORKFLOW}'](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
+          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
 
       - name: Review PR (approve)
         if: env.command == 'approve' && github.event.pull_request
