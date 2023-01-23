@@ -53,8 +53,8 @@ jobs:
             const comment = process.env.comment;
 
             if(comment.startsWith('/')){
-              const parts = comment.split(' ');
-              core.exportVariable("command", parts[0]);
+              const parts = comment.substring(1).split(' ');
+              core.exportVariable("command", parts[0].toLowerCase());
               core.exportVariable("args", parts.slice(1).join(' '));
             }
 
