@@ -61,7 +61,7 @@ jobs:
           git config --global user.name "Mashiro"
           git config --global user.email "107276926+mashiro-san@users.noreply.github.com"
 
-          git branch -c $ref $branch
+          git checkout -b $branch
           git push origin HEAD
 
           git push origin --delete $ref
