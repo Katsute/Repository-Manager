@@ -58,10 +58,13 @@ jobs:
           ref: ${{ env.ref }}
           branch: ${{ env.branch }}
         run: |
+          git config --global user.name "Mashiro"
+          git config --global user.email "107276926+mashiro-san@users.noreply.github.com"
+
           git branch -c $ref $branch
-          git checkout $branch
-          git branch -d $ref
           git push origin HEAD
+
+          git push origin --delete $ref
 
       - name: Create Orphan Branch
         if: env.type == 'orphan'
@@ -69,11 +72,15 @@ jobs:
           ref: ${{ env.ref }}
           branch: ${{ env.branch }}
         run: |
+          git config --global user.name "Mashiro"
+          git config --global user.email "107276926+mashiro-san@users.noreply.github.com"
+
           git checkout --orphan $branch
-          git branch -d $ref
           git rm -rf .
           git commit --allow-empty -m 'Initial commit'
           git push origin HEAD
+
+          git push origin --delete $ref
 
   issue:
     name: Issue Locking
