@@ -59,7 +59,7 @@ jobs:
           branch: ${{ env.branch }}
         run: |
           git branch -m $ref $branch
-          git push
+          git push origin HEAD
 
       - name: Create Orphan Branch
         if: env.type == 'orphan'
@@ -71,7 +71,7 @@ jobs:
           git checkout --orphan $branch
           git rm -rf .
           git commit --allow-empty -m 'Initial commit'
-          git push
+          git push origin HEAD
 
   issue:
     name: Issue Locking
