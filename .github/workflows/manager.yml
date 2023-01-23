@@ -37,6 +37,7 @@ jobs:
         with:
           github-token: ${{ secrets.token }}
           script: |
+            core.exportVariable("ref", context.payload.ref);
             if(context.payload.ref.endsWith('@')){
               const sha = (await github.rest.repos.getCommit({
                 owner: context.payload.repository.owner.login,
@@ -54,7 +55,7 @@ jobs:
       - name: Create SHA Branch
         if: env.type == 'sha'
         env:
-          ref: ${{ github.ref }}
+          ref: ${{ env.ref }}
           branch: ${{ env.branch }}
         run: |
           git branch -m $ref $branch
@@ -63,7 +64,7 @@ jobs:
       - name: Create Orphan Branch
         if: env.type == 'orphan'
         env:
-          ref: ${{ github.ref }}
+          ref: ${{ env.ref }}
           branch: ${{ env.branch }}
         run: |
           git branch -d $ref
