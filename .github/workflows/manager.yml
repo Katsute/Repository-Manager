@@ -9,6 +9,7 @@ jobs:
   debug:
     name: Debug
     runs-on: ubuntu-latest
+    if: github.repository == 'Katsute/Repository-Manager'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -24,7 +25,7 @@ jobs:
   create:
     name: Branch Rename
     runs-on: ubuntu-latest
-    if: github.event_name == 'create'
+    if: github.event_name == 'create' && github.ref_type == 'branch'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -36,7 +37,38 @@ jobs:
         with:
           github-token: ${{ secrets.token }}
           script: |
-            // todo: get SHA
+            if(context.payload.ref.endsWith('@')){
+              const sha = (await github.rest.repos.getCommit({
+                owner: context.payload.repository.owner.login,
+                repo: context.payload.repository.name,
+                ref: context.payload.ref
+              })).data.sha.substring(0, 7);
+
+              core.exportVariable("branch", context.payload.ref + sha);
+              core.exportVariable("type", "sha");
+            }else if(context.payload.ref.startsWith('!')){
+              core.exportVariable("branch", context.payload.ref.substring(1));
+              core.exportVariable("type", "orphan");
+            }
+
+      - name: Create SHA Branch
+        if: env.type == 'sha'
+        with:
+          ref: ${{ github.ref }}
+          branch: ${{ env.branch }}
+        run: |
+          git branch -m $ref $branch
+          git push
+
+      - name: Create Orphan Branch
+        if: env.type == 'orphan'
+        with:
+          branch: ${{ env.branch }}
+        run: |
+          git checkout --orphan $branch
+          git rm -rf .
+          git commit --allow-empty -m 'Initial commit'
+          git push
 
   issue:
     name: Issue Locking
@@ -50,6 +82,7 @@ jobs:
 
       - name: Issue Lock
         env:
+          GITHUB_TOKEN: ${{ secrets.token }}
           ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
           NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
           LOCK: ${{ github.event.action == 'closed' && 'lock' || 'unlock' }}
