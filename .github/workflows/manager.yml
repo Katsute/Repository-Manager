@@ -114,14 +114,15 @@ jobs:
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
-          REF=$(gh pr view $NUMBER --json headRefOid --jq ".headRefOid")
-          PREF=${REF:0:7}
-          BRANCH="pr#$NUMBER@$PREF"
+          REF=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+          SHA=$(gh pr view $NUMBER --json headRefOid --jq ".headRefOid")
+          PSHA=${SHA:0:7}
+          BRANCH="pr#$NUMBER@$PSHA"
 
           git config --global user.name "$name"
           git config --global user.email "$email"
 
-          git checkout -b "$BRANCH" "$REF"
+          git checkout -b "$BRANCH" "origin/$REF"
           git push origin HEAD
 
           link=$(gh pr create -t "$TITLE" -b "" --head "$BRANCH")
