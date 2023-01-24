@@ -73,7 +73,7 @@ jobs:
           gh $ISSUE comment $NUMBER -b "@$ACTOR created a new issue at [#$number]($link)"
 
       - name: Dispatch Workflow
-        if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.issue.pull_request
+        if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.issue.pull_request && env.args
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
@@ -87,7 +87,7 @@ jobs:
           gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
 
       - name: Dispatch Workflow (pull)
-        if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.issue.pull_request
+        if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.issue.pull_request && env.args
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
@@ -100,6 +100,35 @@ jobs:
           gh workflow run $WORKFLOW --ref $REF
           gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
 
+      - name: Duplicate PR
+        if: (env.command == 'pr' || env.command == 'pull') && github.event.issue.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          TITLE: ${{ env.args || github.event.issue.title }}
+        run: |
+          REF=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+          link=$(gh pr create -t "$TITLE" -b "" --head "$REF")
+          number=${link##*/}
+          gh $ISSUE comment $NUMBER -b "@$ACTOR created a new pull request at [#$number]($link)"
+
+      - name: Merge PR
+        if: (env.command == 'merge') && github.event.issue.pull_request && env.args
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          PULL: ${{ env.args }}
+        run: |
+          FROM=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+          DEST=$(gh pr view $PULL --json headRefName --jq ".headRefName")
+          URL=$(gh pr view $PULL --json url --jq ".url")
+          git checkout "$DEST"
+          git merge "$FROM"
+          git push origin HEAD
+          gh $ISSUE comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)
+
       - name: Review PR (approve)
         if: env.command == 'approve' && github.event.issue.pull_request
         env:
@@ -107,7 +136,7 @@ jobs:
           ACTOR: ${{ github.event.sender.login }}
           NUMBER: ${{ github.event.issue.number }}
           MESSAGE: ${{ env.args }}
-        run: gh pr review $NUMBER --approve --comment --body "Approved by @$ACTOR $MESSAGE"
+        run: gh pr review $NUMBER --approve --body "Approved by @$ACTOR $MESSAGE"
 
       - name: Review PR (reject)
         if: env.command == 'reject' && github.event.issue.pull_request
