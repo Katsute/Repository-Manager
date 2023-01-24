@@ -64,7 +64,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
           TITLE: ${{ env.args }}
           ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
         run: |
@@ -73,11 +73,11 @@ jobs:
           gh $ISSUE comment $NUMBER -b "@$ACTOR created a new issue at [#$number]($link)"
 
       - name: Dispatch Workflow
-        if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.pull_request
+        if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.issue.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
           WORKFLOW: ${{ env.args }}
           REF: ${{ github.event.repository.default_branch }}
           REPO: ${{ github.repository }}
@@ -87,34 +87,34 @@ jobs:
           gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
 
       - name: Dispatch Workflow (pull)
-        if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.pull_request
+        if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.issue.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
           WORKFLOW: ${{ env.args }}
-          REF: ${{ github.event.pull_request.head.ref }}
           REPO: ${{ github.repository }}
           ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
         run: |
+          REF=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
           gh workflow run $WORKFLOW --ref $REF
           gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
 
       - name: Review PR (approve)
-        if: env.command == 'approve' && github.event.pull_request
+        if: env.command == 'approve' && github.event.issue.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
           MESSAGE: ${{ env.args }}
         run: gh pr review $NUMBER --approve --comment --body "Approved by @$ACTOR $MESSAGE"
 
       - name: Review PR (reject)
-        if: env.command == 'reject' && github.event.pull_request
+        if: env.command == 'reject' && github.event.issue.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
           MESSAGE: ${{ env.args }}
         run: gh pr review $NUMBER --request-changes --body "Rejected by @$ACTOR $MESSAGE"
 
