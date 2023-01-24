@@ -114,14 +114,13 @@ jobs:
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
-          REF=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+          REF=$(gh pr view $NUMBER --json headRefOid --jq ".headRefOid")
           PREF=${REF:0:7}
-          BRANCH="pr#$NUMBER@$REF"
+          BRANCH="pr#$NUMBER@$PREF"
 
           git config --global user.name "$name"
           git config --global user.email "$email"
 
-          git fetch --all
           git checkout -b "$BRANCH" "$REF"
           git push origin HEAD
 
@@ -147,7 +146,6 @@ jobs:
           git config --global user.name "$name"
           git config --global user.email "$email"
 
-          git fetch --all
           git checkout "$DEST"
           git merge "$FROM"
           git push origin HEAD
