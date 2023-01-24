@@ -121,6 +121,7 @@ jobs:
           git config --global user.name "$name"
           git config --global user.email "$email"
 
+          git fetch --all
           git checkout -b "$BRANCH" "$REF"
           git push origin HEAD
 
@@ -146,6 +147,7 @@ jobs:
           git config --global user.name "$name"
           git config --global user.email "$email"
 
+          git fetch --all
           git checkout "$DEST"
           git merge "$FROM"
           git push origin HEAD
@@ -206,7 +208,7 @@ jobs:
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
-          branch=${REF:1}"
+          branch=${REF:1}
 
           git config --global user.name "$name"
           git config --global user.email "$email"
