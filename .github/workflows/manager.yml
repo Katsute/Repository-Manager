@@ -122,6 +122,7 @@ jobs:
           git config --global user.name "$name"
           git config --global user.email "$email"
 
+          git fetch --all
           git checkout -b "$BRANCH" "origin/$REF"
           git push origin HEAD
 
@@ -147,6 +148,7 @@ jobs:
           git config --global user.name "$name"
           git config --global user.email "$email"
 
+          git fetch --all
           git checkout "$DEST"
           git merge "$FROM"
           git push origin HEAD
