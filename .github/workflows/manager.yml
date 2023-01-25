@@ -153,7 +153,7 @@ jobs:
           git merge "$FROM"
           git push origin HEAD
 
-          gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)
+          gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
 
       - name: Review PR (approve)
         if: env.command == 'approve' && github.event.issue.pull_request
