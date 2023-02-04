@@ -166,16 +166,15 @@ jobs:
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
-          FROM=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
-          DEST=$(gh pr view $MASTER --json headRefName --jq ".headRefName")
+          BRANCH=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
 
           git config --global user.name "$name"
           git config --global user.email "$email"
 
           git fetch --all
-          git checkout "$DEST"
-          git merge "origin/$FROM"
-          git push origin $DEST
+          git checkout "$BRANCH"
+          git merge "origin/$MASTER"
+          git push origin $BRANCH
 
       - name: Push Empty Commit
         if: env.command == 'push' && github.event.issue.pull_request
