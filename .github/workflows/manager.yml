@@ -133,7 +133,7 @@ jobs:
           gh pr comment $NUMBER -b "@$ACTOR created a new pull request at [#$number]($link)"
 
       - name: Merge PR
-        if: (env.command == 'merge') && github.event.issue.pull_request && env.args
+        if: env.command == 'merge' && github.event.issue.pull_request && env.args
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
@@ -155,6 +155,48 @@ jobs:
           git push origin HEAD
 
           gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
+
+      - name: Merge Master
+        if: (env.command == 'sync' || env.command == 'update') && github.event.issue.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          MASTER: ${{ github.event.repository.default_branch }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          FROM=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+          DEST=$(gh pr view $MASTER --json headRefName --jq ".headRefName")
+
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git fetch --all
+          git checkout "$DEST"
+          git merge "origin/$FROM"
+          git push origin HEAD
+
+      - name: Push Empty Commit
+        if: env.command == 'push' && github.event.issue.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          BRANCH=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git fetch --all
+          git checkout "$BRANCH"
+          git commit --allow-empty -m "Empty commit"
+          git push origin HEAD
+
+          gh pr comment $NUMBER -b "@$ACTOR pushed an empty commit"
 
       - name: Review PR (approve)
         if: env.command == 'approve' && github.event.issue.pull_request
