@@ -174,7 +174,7 @@ jobs:
 
           git fetch --all
           git checkout "$DEST"
-          git merge "origin/$FROM"
+          git merge "$FROM"
           git push origin HEAD
 
       - name: Push Empty Commit
@@ -195,8 +195,6 @@ jobs:
           git checkout "$BRANCH"
           git commit --allow-empty -m "Empty commit"
           git push origin HEAD
-
-          gh pr comment $NUMBER -b "@$ACTOR pushed an empty commit"
 
       - name: Review PR (approve)
         if: env.command == 'approve' && github.event.issue.pull_request
