@@ -151,7 +151,7 @@ jobs:
 
           git fetch --all
           git checkout "$DEST"
-          git merge "$FROM"
+          git merge "origin/$FROM"
           git push origin HEAD
 
           gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
