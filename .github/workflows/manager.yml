@@ -151,7 +151,7 @@ jobs:
 
           git fetch --all
           git checkout "$DEST"
-          git merge --squash "origin/$FROM"
+          git merge --no-ff --squash "origin/$FROM"
           git push origin HEAD
 
           gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
@@ -172,8 +172,10 @@ jobs:
           git config --global user.email "$email"
 
           git fetch --all
+          git checkout "$MASTER"
+          git pull
           git checkout "$BRANCH"
-          git merge --squash "origin/$MASTER"
+          git merge --no-ff --squash "$MASTER"
           git push origin $BRANCH
 
       - name: Push Empty Commit
