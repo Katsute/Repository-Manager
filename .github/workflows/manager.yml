@@ -57,6 +57,7 @@ jobs:
               const parts = comment.split(' ').slice(1);
               core.exportVariable("command", parts[0].toLowerCase());
               core.exportVariable("args", parts.slice(1).join(' '));
+              core.exportVariable("argsnh", parts.slice(1).join(' ').replace(/#/g, ''));
             }
 
       - name: Create Issue
@@ -137,7 +138,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
           NUMBER: ${{ github.event.issue.number }}
-          PULL: ${{ env.args }}
+          PULL: ${{ env.argsnh }}
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
