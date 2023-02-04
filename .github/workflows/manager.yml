@@ -171,7 +171,9 @@ jobs:
           git config --global user.name "$name"
           git config --global user.email "$email"
 
+          git checkout "$MASTER"
           git fetch --all
+          git merge "origin/$MASTER"
           git checkout "$BRANCH"
           git merge --no-ff "$MASTER"
           git push origin $BRANCH
