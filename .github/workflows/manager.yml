@@ -174,8 +174,8 @@ jobs:
 
           git fetch --all
           git checkout "$DEST"
-          git merge "$FROM"
-          git push origin HEAD
+          git merge "origin/$FROM"
+          git push origin $DEST
 
       - name: Push Empty Commit
         if: env.command == 'push' && github.event.issue.pull_request
