@@ -64,57 +64,112 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
           TITLE: ${{ env.args }}
           ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
         run: |
           link=$(gh issue create -t "$TITLE" -b  "")
           number=${link##*/}
+
           gh $ISSUE comment $NUMBER -b "@$ACTOR created a new issue at [#$number]($link)"
 
       - name: Dispatch Workflow
-        if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.pull_request
+        if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.issue.pull_request && env.args
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
           WORKFLOW: ${{ env.args }}
           REF: ${{ github.event.repository.default_branch }}
           REPO: ${{ github.repository }}
           ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
         run: |
           gh workflow run $WORKFLOW
+
           gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
 
       - name: Dispatch Workflow (pull)
-        if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.pull_request
+        if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.issue.pull_request && env.args
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
           WORKFLOW: ${{ env.args }}
-          REF: ${{ github.event.pull_request.head.ref }}
           REPO: ${{ github.repository }}
           ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
         run: |
+          REF=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+
           gh workflow run $WORKFLOW --ref $REF
+
           gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
 
-      - name: Review PR (approve)
-        if: env.command == 'approve' && github.event.pull_request
+      - name: Duplicate PR
+        if: (env.command == 'pr' || env.command == 'pull') && github.event.issue.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
+          TITLE: ${{ env.args || github.event.issue.title }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          REF=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+          SHA=$(gh pr view $NUMBER --json headRefOid --jq ".headRefOid")
+          PSHA=${SHA:0:7}
+          BRANCH="pr#$NUMBER@$PSHA"
+
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git fetch --all
+          git checkout -b "$BRANCH" "origin/$REF"
+          git push origin HEAD
+
+          link=$(gh pr create -t "$TITLE" -b "" --head "$BRANCH")
+          number=${link##*/}
+
+          gh pr comment $NUMBER -b "@$ACTOR created a new pull request at [#$number]($link)"
+
+      - name: Merge PR
+        if: (env.command == 'merge') && github.event.issue.pull_request && env.args
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          PULL: ${{ env.args }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          FROM=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+          DEST=$(gh pr view $PULL --json headRefName --jq ".headRefName")
+          URL=$(gh pr view $PULL --json url --jq ".url")
+
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git fetch --all
+          git checkout "$DEST"
+          git merge "$FROM"
+          git push origin HEAD
+
+          gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
+
+      - name: Review PR (approve)
+        if: env.command == 'approve' && github.event.issue.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
           MESSAGE: ${{ env.args }}
-        run: gh pr review $NUMBER --approve --comment --body "Approved by @$ACTOR $MESSAGE"
+        run: gh pr review $NUMBER --approve --body "Approved by @$ACTOR $MESSAGE"
 
       - name: Review PR (reject)
-        if: env.command == 'reject' && github.event.pull_request
+        if: env.command == 'reject' && github.event.issue.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.pull_request.number }}
+          NUMBER: ${{ github.event.issue.number }}
           MESSAGE: ${{ env.args }}
         run: gh pr review $NUMBER --request-changes --body "Rejected by @$ACTOR $MESSAGE"
 
@@ -128,59 +183,43 @@ jobs:
         with:
           token: ${{ secrets.token }}
 
-      - name: Parse Branch
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.token }}
-          script: |
-            core.exportVariable("ref", context.payload.ref);
-            if(context.payload.ref.endsWith('@')){
-              const sha = (await github.rest.repos.getCommit({
-                owner: context.payload.repository.owner.login,
-                repo: context.payload.repository.name,
-                ref: context.payload.ref
-              })).data.sha.substring(0, 7);
-
-              core.exportVariable("branch", context.payload.ref + sha);
-              core.exportVariable("type", "sha");
-            }else if(context.payload.ref.startsWith('!')){
-              core.exportVariable("branch", context.payload.ref.substring(1));
-              core.exportVariable("type", "orphan");
-            }
-
       - name: Create SHA Branch
-        if: env.type == 'sha'
+        if: endsWith(github.event.ref, '@')
         env:
-          ref: ${{ env.ref }}
-          branch: ${{ env.branch }}
+          REF: ${{ github.event.ref }}
+          SHA: ${{ github.sha }}
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
+          psha=${SHA:0:7}
+          branch="$REF$psha"
+
           git config --global user.name "$name"
           git config --global user.email "$email"
 
-          git checkout -b $branch
+          git checkout -b "$branch"
           git push origin HEAD
 
-          git push origin --delete $ref
+          git push origin --delete $REF
 
       - name: Create Orphan Branch
-        if: env.type == 'orphan'
+        if: startsWith(github.event.ref, '!')
         env:
-          ref: ${{ env.ref }}
-          branch: ${{ env.branch }}
+          REF: ${{ github.event.ref }}
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
+          branch=${REF:1}
+
           git config --global user.name "$name"
           git config --global user.email "$email"
 
-          git checkout --orphan $branch
+          git checkout --orphan "$branch"
           git rm -rf .
-          git commit --allow-empty -m 'Initial commit'
+          git commit --allow-empty -m "Initial commit"
           git push origin HEAD
 
-          git push origin --delete $ref
+          git push origin --delete $REF
 
   issue:
     name: Issue Locking
