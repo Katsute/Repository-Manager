@@ -173,7 +173,7 @@ jobs:
 
           git fetch --all
           git checkout "$BRANCH"
-          git merge --no-ff "origin/$MASTER"
+          git merge --no-ff "$MASTER"
           git push origin $BRANCH
 
       - name: Push Empty Commit
