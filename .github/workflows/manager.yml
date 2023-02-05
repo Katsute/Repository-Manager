@@ -139,19 +139,14 @@ jobs:
           ACTOR: ${{ github.event.sender.login }}
           NUMBER: ${{ github.event.issue.number }}
           OWNER: ${{ github.event.repository.owner.login }}
-          NAME: ${{ github.event.repository.name }}
+          REPO: ${{ github.event.repository.name }}
           PULL: ${{ env.argsnh }}
         run: |
           FROM=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
           DEST=$(gh pr view $PULL --json headRefName --jq ".headRefName")
           URL=$(gh pr view $PULL --json url --jq ".url")
 
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            /repos/$OWNER/$REPO/merges \
-            -f base="$DEST" \
-            -f head="$FROM"
+          gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$DEST" -f head="$FROM"
 
           gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
 
@@ -162,16 +157,11 @@ jobs:
           NUMBER: ${{ github.event.issue.number }}
           MASTER: ${{ github.event.repository.default_branch }}
           OWNER: ${{ github.event.repository.owner.login }}
-          NAME: ${{ github.event.repository.name }}
+          REPO: ${{ github.event.repository.name }}
         run: |
           BRANCH=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
 
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            /repos/$OWNER/$REPO/merges \
-            -f base="$BRANCH" \
-            -f head="$MASTER"
+          gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$BRANCH" -f head="$MASTER"
 
       - name: Push Empty Commit
         if: env.command == 'push' && github.event.issue.pull_request
