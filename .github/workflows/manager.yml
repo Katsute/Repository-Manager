@@ -138,6 +138,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
           NUMBER: ${{ github.event.issue.number }}
+          OWNER: ${{ github.event.repository.owner.login }}
+          NAME: ${{ github.event.repository.name }}
           PULL: ${{ env.argsnh }}
         run: |
           FROM=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
@@ -147,7 +149,7 @@ jobs:
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
-            /repos/OWNER/REPO/merges \
+            /repos/$OWNER/$REPO/merges \
             -f base="$DEST" \
             -f head="$FROM"
 
@@ -159,13 +161,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.token }}
           NUMBER: ${{ github.event.issue.number }}
           MASTER: ${{ github.event.repository.default_branch }}
+          OWNER: ${{ github.event.repository.owner.login }}
+          NAME: ${{ github.event.repository.name }}
         run: |
           BRANCH=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
 
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
-            /repos/OWNER/REPO/merges \
+            /repos/$OWNER/$REPO/merges \
             -f base="$BRANCH" \
             -f head="$MASTER"
 
@@ -173,6 +177,7 @@ jobs:
         if: env.command == 'push' && github.event.issue.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
+          NUMBER: ${{ github.event.issue.number }}
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
