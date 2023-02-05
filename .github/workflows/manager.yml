@@ -146,7 +146,7 @@ jobs:
           DEST=$(gh pr view $PULL --json headRefName --jq ".headRefName")
           URL=$(gh pr view $PULL --json url --jq ".url")
 
-          gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$DEST" -f head="$FROM"
+          gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$DEST" -f head="$FROM" -f commit_message="Merge branch '$FROM' into $DEST"
 
           gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
 
@@ -161,7 +161,7 @@ jobs:
         run: |
           BRANCH=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
 
-          gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$BRANCH" -f head="$MASTER"
+          gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$BRANCH" -f head="$MASTER" -f commit_message="Merge branch '$MASTER' into $BRANCH"
 
       - name: Push Empty Commit
         if: env.command == 'push' && github.event.issue.pull_request
