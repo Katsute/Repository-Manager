@@ -139,20 +139,17 @@ jobs:
           ACTOR: ${{ github.event.sender.login }}
           NUMBER: ${{ github.event.issue.number }}
           PULL: ${{ env.argsnh }}
-          name: ${{ inputs.username }}
-          email: ${{ inputs.email }}
         run: |
           FROM=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
           DEST=$(gh pr view $PULL --json headRefName --jq ".headRefName")
           URL=$(gh pr view $PULL --json url --jq ".url")
 
-          git config --global user.name "$name"
-          git config --global user.email "$email"
-
-          git fetch --all
-          git checkout "$DEST"
-          git merge --squash "origin/$FROM"
-          git push origin HEAD
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/OWNER/REPO/merges \
+            -f base="$DEST" \
+            -f head="$FROM"
 
           gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
 
@@ -160,30 +157,22 @@ jobs:
         if: (env.command == 'sync' || env.command == 'update') && github.event.issue.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
-          ACTOR: ${{ github.event.sender.login }}
           NUMBER: ${{ github.event.issue.number }}
           MASTER: ${{ github.event.repository.default_branch }}
-          name: ${{ inputs.username }}
-          email: ${{ inputs.email }}
         run: |
           BRANCH=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
 
-          git config --global user.name "$name"
-          git config --global user.email "$email"
-
-          git checkout "$MASTER"
-          git fetch --all
-          git merge "origin/$MASTER"
-          git checkout "$BRANCH"
-          git merge --no-ff "$MASTER"
-          git push origin $BRANCH
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/OWNER/REPO/merges \
+            -f base="$BRANCH" \
+            -f head="$MASTER"
 
       - name: Push Empty Commit
         if: env.command == 'push' && github.event.issue.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
-          ACTOR: ${{ github.event.sender.login }}
-          NUMBER: ${{ github.event.issue.number }}
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
