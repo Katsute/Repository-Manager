@@ -58,6 +58,7 @@ jobs:
               core.exportVariable("command", parts[0].toLowerCase());
               core.exportVariable("args", parts.slice(1).join(' '));
               core.exportVariable("argsnh", parts.slice(1).join(' ').replace(/#/g, ''));
+              core.exportVariable("argswf", parts.slice(1).join(' ').replace(/\.ya?ml/g, ''));
             }
 
       - name: Create Issue
@@ -80,14 +81,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.token }}
           ACTOR: ${{ github.event.sender.login }}
           NUMBER: ${{ github.event.issue.number }}
-          WORKFLOW: ${{ env.args }}
+          WORKFLOW: ${{ env.argswf }}
           REF: ${{ github.event.repository.default_branch }}
           REPO: ${{ github.repository }}
           ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
         run: |
           gh workflow run $WORKFLOW
 
-          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
+          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}.yml](https://github.com/${REPO}/actions/workflows/${WORKFLOW}.yml) on branch '$REF'"
 
       - name: Dispatch Workflow (pull)
         if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.issue.pull_request && env.args

@@ -10,7 +10,7 @@ Single workflow to manage all repositories.
  * `*@` create SHA branch
  * Sync labels
  * `issue <title>` create issue
- * `dispatch <workflow.yml>` | `workflow <workflow.yml>` dispatch workflow
+ * `dispatch <workflow>` | `workflow <workflow>` dispatch workflow
  * `pr` | `pull` duplicate pull request
  * `merge <#pr>` merge into pull request
  * `sync` | `update` merge master into pull request
