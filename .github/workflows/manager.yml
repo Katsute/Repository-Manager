@@ -19,6 +19,7 @@ jobs:
   debug:
     name: Debug
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.repository == 'Katsute/Repository-Manager'
     steps:
       - name: Checkout Repository
@@ -35,6 +36,7 @@ jobs:
   comment:
     name: Commands
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event_name == 'issue_comment' && contains('OWNER, MEMBER, COLLABORATOR', github.event.comment.author_association)
     steps:
       - name: Checkout Repository
@@ -203,6 +205,7 @@ jobs:
   create:
     name: Branch Rename
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event_name == 'create' && github.ref_type == 'branch'
     steps:
       - name: Checkout Repository
@@ -251,6 +254,7 @@ jobs:
   issue:
     name: Issue Locking
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event_name == 'issues'
     steps:
       - name: Checkout Repository
@@ -269,6 +273,7 @@ jobs:
   label:
     name: Label Sync
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event_name == 'workflow_dispatch' && github.repository != 'Katsute/Repository-Manager'
     steps:
       - name: Checkout Repository
@@ -285,6 +290,7 @@ jobs:
   sync:
     name: Sync Files
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout Repository
