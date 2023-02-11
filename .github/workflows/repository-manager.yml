@@ -282,6 +282,16 @@ jobs:
           REPO: ${{ github.repository }}
         run: gh label clone Katsute/Repository-Manager --repo $REPO -f
 
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
   sync:
     name: Sync Files
     runs-on: ubuntu-latest
@@ -293,6 +303,8 @@ jobs:
           token: ${{ secrets.token }}
 
       - name: Check For PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
         run: |
           pr=$(gh pr view "repository-manager-sync")
 
@@ -378,6 +390,7 @@ jobs:
         run: |
           rm repo-manager-tmp-pr.md
           rm repo-manager-tmp-release.yml
+          rm repo-manager-tmp-dependabot.yml
           rm repo-manager-tmp-workflow.yml
 
       - name: Create PR
