@@ -15,16 +15,12 @@ on:
 jobs:
   manager:
     name: Repository Manager
-    uses: Katsute/Repository-Manager/.github/workflows/repository-manager.yml@main
+    uses: Katsute/Workflows/.github/workflows/manager.yml@main
     if: >-
       ${{
       (github.repository_owner == 'Katsute' || github.repository_owner == 'KatsuteDev') &&
       github.actor != 'mashiro-san' &&
       !endsWith(github.actor, '[bot]')
       }}
-    with:
-      login: mashiro-san
-      username: Mashiro
-      email: 107276926+mashiro-san@users.noreply.github.com
     secrets:
-      token: ${{ secrets.token }}
+      token: ${{ secrets.BOT }}

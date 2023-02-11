@@ -1,0 +1,392 @@
+name: Repository Manager
+on:
+  workflow_call:
+    inputs:
+      login:
+        type: string
+        required: true
+      username:
+        type: string
+        required: true
+      email:
+        type: string
+        required: true
+    secrets:
+      token:
+        required: true
+
+jobs:
+  debug:
+    name: Debug
+    runs-on: ubuntu-latest
+    if: github.repository == 'Katsute/Repository-Manager'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Print Debug
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.token }}
+          script: core.info(require("util").inspect(context, true, 6));
+
+  comment:
+    name: Commands
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment' && contains('OWNER, MEMBER, COLLABORATOR', github.event.comment.author_association)
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Parse Comment
+        uses: actions/github-script@v6
+        env:
+          login: ${{ inputs.login }}
+          comment: ${{ github.event.comment.body }}
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            const login = process.env.login;
+            const comment = process.env.comment;
+
+            if(comment.startsWith(`@${login}`)){
+              const parts = comment.split(' ').slice(1);
+              core.exportVariable("command", parts[0].toLowerCase());
+              core.exportVariable("args", parts.slice(1).join(' '));
+              core.exportVariable("argsnh", parts.slice(1).join(' ').replace(/#/g, ''));
+              core.exportVariable("argswf", parts.slice(1).join(' ').replace(/\.ya?ml/g, ''));
+            }
+
+      - name: Create Issue
+        if: env.command == 'issue'
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          TITLE: ${{ env.args }}
+          ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
+        run: |
+          link=$(gh issue create -t "$TITLE" -b  "")
+          number=${link##*/}
+
+          gh $ISSUE comment $NUMBER -b "@$ACTOR created a new issue at [#$number]($link)"
+
+      - name: Dispatch Workflow
+        if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.issue.pull_request && env.args
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          WORKFLOW: ${{ env.argswf }}
+          REF: ${{ github.event.repository.default_branch }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
+        run: |
+          gh workflow run $WORKFLOW
+
+          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}.yml](https://github.com/${REPO}/actions/workflows/${WORKFLOW}.yml) on branch '$REF'"
+
+      - name: Dispatch Workflow (pull)
+        if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.issue.pull_request && env.args
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          WORKFLOW: ${{ env.args }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
+        run: |
+          REF=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+
+          gh workflow run $WORKFLOW --ref $REF
+
+          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
+
+      - name: Duplicate PR
+        if: (env.command == 'pr' || env.command == 'pull') && github.event.issue.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          TITLE: ${{ env.args || github.event.issue.title }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          REF=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+          SHA=$(gh pr view $NUMBER --json headRefOid --jq ".headRefOid")
+          PSHA=${SHA:0:7}
+          BRANCH="pr#$NUMBER@$PSHA"
+
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git fetch --all
+          git checkout -b "$BRANCH" "origin/$REF"
+          git push origin HEAD
+
+          link=$(gh pr create -t "$TITLE" -b "" --head "$BRANCH")
+          number=${link##*/}
+
+          gh pr comment $NUMBER -b "@$ACTOR created a new pull request at [#$number]($link)"
+
+      - name: Merge PR
+        if: env.command == 'merge' && github.event.issue.pull_request && env.args
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          OWNER: ${{ github.event.repository.owner.login }}
+          REPO: ${{ github.event.repository.name }}
+          PULL: ${{ env.argsnh }}
+        run: |
+          FROM=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+          DEST=$(gh pr view $PULL --json headRefName --jq ".headRefName")
+          URL=$(gh pr view $PULL --json url --jq ".url")
+
+          gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$DEST" -f head="$FROM" -f commit_message="Merge branch '$FROM' into $DEST"
+
+          gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
+
+      - name: Merge Master
+        if: (env.command == 'sync' || env.command == 'update') && github.event.issue.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          MASTER: ${{ github.event.repository.default_branch }}
+          OWNER: ${{ github.event.repository.owner.login }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          BRANCH=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+
+          gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$BRANCH" -f head="$MASTER" -f commit_message="Merge branch '$MASTER' into $BRANCH"
+
+      - name: Push Empty Commit
+        if: env.command == 'push' && github.event.issue.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          BRANCH=$(gh pr view $NUMBER --json headRefName --jq ".headRefName")
+
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git fetch --all
+          git checkout "$BRANCH"
+          git commit --allow-empty -m "Empty commit"
+          git push origin HEAD
+
+      - name: Review PR (approve)
+        if: env.command == 'approve' && github.event.issue.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          MESSAGE: ${{ env.args }}
+        run: gh pr review $NUMBER --approve --body "Approved by @$ACTOR $MESSAGE"
+
+      - name: Review PR (reject)
+        if: env.command == 'reject' && github.event.issue.pull_request
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ACTOR: ${{ github.event.sender.login }}
+          NUMBER: ${{ github.event.issue.number }}
+          MESSAGE: ${{ env.args }}
+        run: gh pr review $NUMBER --request-changes --body "Rejected by @$ACTOR $MESSAGE"
+
+  create:
+    name: Branch Rename
+    runs-on: ubuntu-latest
+    if: github.event_name == 'create' && github.ref_type == 'branch'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Create SHA Branch
+        if: endsWith(github.event.ref, '@')
+        env:
+          REF: ${{ github.event.ref }}
+          SHA: ${{ github.sha }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          psha=${SHA:0:7}
+          branch="$REF$psha"
+
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git checkout -b "$branch"
+          git push origin HEAD
+
+          git push origin --delete $REF
+
+      - name: Create Orphan Branch
+        if: startsWith(github.event.ref, '!')
+        env:
+          REF: ${{ github.event.ref }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          branch=${REF:1}
+
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git checkout --orphan "$branch"
+          git rm -rf .
+          git commit --allow-empty -m "Initial commit"
+          git push origin HEAD
+
+          git push origin --delete $REF
+
+  issue:
+    name: Issue Locking
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Issue Lock
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ISSUE: ${{ github.event.issue && 'issue' || 'pr' }}
+          NUMBER: ${{ github.event.issue && github.event.issue.number || github.event.pull_request.number }}
+          LOCK: ${{ github.event.action == 'closed' && 'lock' || 'unlock' }}
+        run: gh $ISSUE $LOCK $NUMBER
+
+  label:
+    name: Label Sync
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.repository != 'Katsute/Repository-Manager'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Sync Labels
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          REPO: ${{ github.repository }}
+        run: gh label clone Katsute/Repository-Manager --repo $REPO -f
+
+  sync:
+    name: Sync Files
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Check For PR
+        run: |
+          pr=$(gh pr view "repository-manager-sync")
+
+          if [[ $pr = "no pull requests found for branch *" ]]
+          then
+            echo "new=true" >> $GITHUB_ENV
+          fi
+
+      - name: Initialize Git
+        if: env.new == 'true'
+        env:
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git checkout -B "repository-manager-sync"
+
+      - name: Copy Files
+        if: env.new == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+        run: |
+          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/pr.md" -o repo-manager-tmp-pr.md
+          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/release.yml" -o repo-manager-tmp-release.yml
+          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/dependabot.yml" -o repo-manager-tmp-dependabot.yml
+          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/workflow.yml" -o repo-manager-tmp-workflow.md
+
+      - name: Sync Files
+        uses: actions/github-script@v6
+        if: env.new == 'true'
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            const fs = require("fs");
+            const path = require("path");
+
+            let changed = false;
+
+            const compareAndUpdate = (local, latest) => {
+              if(!fs.existsSync(local) || fs.readFileSync(local, "utf-8") != fs.readFileSync(latest, "utf-8")){
+                changed = true;
+                fs.copyFileSync(latest, local);
+              }
+            };
+
+            // mkdir
+
+            fs.existsSync(".github") || fs.mkdirSync(".github");
+            fs.existsSync(path.join(".github", "workflows")) || fs.mkdirSync(path.join(".github", "workflows"), {recursive: true});
+
+            // pr
+
+            compareAndUpdate(path.join(".github", "pull_request_template.md"), "repo-manager-tmp-pr.md");
+
+            // release
+
+            compareAndUpdate(path.join(".github", "release.yml"), "repo-manager-tmp-release.yml");
+
+            // workflow
+
+            compareAndUpdate(path.join(".github", "workflows", "manager.yml"), "repo-manager-tmp-workflow.yml");
+
+            // dependabot
+
+            compareAndUpdate(path.join(".github", "workflows", "dependabot.yml"), "repo-manager-tmp-dependabot.yml");
+
+            // readme
+
+            // copyright
+
+            // trim
+
+            // export
+
+            if(changed)
+                core.exportVariable("changed", "true");
+
+
+      - name: Cleanup
+        if: env.changed == 'true'
+        run: |
+          rm repo-manager-tmp-pr.md
+          rm repo-manager-tmp-release.yml
+          rm repo-manager-tmp-workflow.yml
+
+      - name: Create PR
+        if: env.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+        run: |
+          git add .
+          git commit -m "Update repository files"
+          git push origin HEAD
+
+          gh pr create -t "Update repository files" -b ""
