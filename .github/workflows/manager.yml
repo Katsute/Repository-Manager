@@ -1,3 +1,5 @@
+# Copyright (C) 2023 Katsute
+
 name: Repository Manager
 on:
   workflow_call:
