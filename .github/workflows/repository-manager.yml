@@ -73,7 +73,9 @@ jobs:
           link=$(gh issue create -t "$TITLE" -b  "")
           number=${link##*/}
 
-          gh $ISSUE comment $NUMBER -b "@$ACTOR created a new issue at [#$number]($link)"
+          link=$(gh $ISSUE comment $NUMBER -b "@$ACTOR created a new issue at [#$number]($link)")
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=="$link")).id')
+          echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Dispatch Workflow
         if: (env.command == 'dispatch' || env.command == 'workflow') && !github.event.issue.pull_request && env.args
@@ -88,7 +90,9 @@ jobs:
         run: |
           gh workflow run $WORKFLOW
 
-          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}.yml](https://github.com/${REPO}/actions/workflows/${WORKFLOW}.yml) on branch '$REF'"
+          link=$(gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}.yml](https://github.com/${REPO}/actions/workflows/${WORKFLOW}.yml) on branch '$REF'")
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=="$link")).id')
+          echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Dispatch Workflow (pull)
         if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.issue.pull_request && env.args
@@ -104,7 +108,9 @@ jobs:
 
           gh workflow run $WORKFLOW --ref $REF
 
-          gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'"
+          link=$(gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'")
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=="$link")).id')
+          echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Duplicate PR
         if: (env.command == 'pr' || env.command == 'pull') && github.event.issue.pull_request
@@ -131,7 +137,9 @@ jobs:
           link=$(gh pr create -t "$TITLE" -b "" --head "$BRANCH")
           number=${link##*/}
 
-          gh pr comment $NUMBER -b "@$ACTOR created a new pull request at [#$number]($link)"
+          link=$(gh pr comment $NUMBER -b "@$ACTOR created a new pull request at [#$number]($link)")
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=="$link")).id')
+          echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Merge PR
         if: env.command == 'merge' && github.event.issue.pull_request && env.args
@@ -149,7 +157,9 @@ jobs:
 
           gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$DEST" -f head="$FROM" -f commit_message="Merge branch '$FROM' into $DEST"
 
-          gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)"
+          link=$(gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)")
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=="$link")).id')
+          echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Merge Master
         if: (env.command == 'sync' || env.command == 'update') && github.event.issue.pull_request
@@ -199,6 +209,21 @@ jobs:
           NUMBER: ${{ github.event.issue.number }}
           MESSAGE: ${{ env.args }}
         run: gh pr review $NUMBER --request-changes --body "Rejected by @$ACTOR $MESSAGE"
+
+      - name: Hide Comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ID: ${{ github.event.comment.node_id }}
+        run: |
+          gh api graphql -f query="mutation{ minimizeComment(input: {classifier: RESOLVED, subjectId: '$ID'}){ minimizedComment{ isMinimized }}}"
+
+      - name: Hide Reply
+        if: env.REPLY
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          ID: ${{ env.REPLY }}
+        run: |
+          gh api graphql -f query="mutation{ minimizeComment(input: {classifier: RESOLVED, subjectId: '$ID'}){ minimizedComment{ isMinimized }}}"
 
   create:
     name: Branch Rename
