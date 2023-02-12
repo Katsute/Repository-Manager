@@ -94,6 +94,9 @@ jobs:
           id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=="$link")).id')
           echo "REPLY=$id" >> $GITHUB_ENV
 
+          echo $link
+          echo $id
+
       - name: Dispatch Workflow (pull)
         if: (env.command == 'dispatch' || env.command == 'workflow') && github.event.issue.pull_request && env.args
         env:
