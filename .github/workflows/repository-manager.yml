@@ -74,7 +74,7 @@ jobs:
           number=${link##*/}
 
           link=$(gh $ISSUE comment $NUMBER -b "@$ACTOR created a new issue at [#$number]($link)")
-          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id'
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id')
           echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Dispatch Workflow
@@ -91,7 +91,7 @@ jobs:
           gh workflow run $WORKFLOW
 
           link=$(gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}.yml](https://github.com/${REPO}/actions/workflows/${WORKFLOW}.yml) on branch '$REF'")
-          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id'
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id')
           echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Dispatch Workflow (pull)
@@ -109,7 +109,7 @@ jobs:
           gh workflow run $WORKFLOW --ref $REF
 
           link=$(gh $ISSUE comment $NUMBER -b "@$ACTOR dispatched workflow [${WORKFLOW}](https://github.com/${REPO}/actions/workflows/${WORKFLOW}) on branch '$REF'")
-          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id'
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id')
           echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Duplicate PR
@@ -138,7 +138,7 @@ jobs:
           number=${link##*/}
 
           link=$(gh pr comment $NUMBER -b "@$ACTOR created a new pull request at [#$number]($link)")
-          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id'
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id')
           echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Merge PR
@@ -158,7 +158,7 @@ jobs:
           gh api --method POST -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/merges -f base="$DEST" -f head="$FROM" -f commit_message="Merge branch '$FROM' into $DEST"
 
           link=$(gh pr comment $NUMBER -b "@$ACTOR merged this pull request into [#$PULL]($URL)")
-          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id'
+          id=$(gh $ISSUE view $NUMBER --json comments --jq 'first(.comments.[]|select(.url=='\"$link\"')).id')
           echo "REPLY=$id" >> $GITHUB_ENV
 
       - name: Merge Master
