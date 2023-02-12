@@ -215,7 +215,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.token }}
           ID: ${{ github.event.comment.node_id }}
         run: |
-          gh api graphql -f query="mutation{ minimizeComment(input: {classifier: RESOLVED, subjectId: '$ID'}){ minimizedComment{ isMinimized }}}"
+          gh api graphql -f query='mutation{ minimizeComment(input: {classifier: RESOLVED, subjectId: "$ID"}){ minimizedComment{ isMinimized }}}'
 
       - name: Hide Reply
         if: env.REPLY
@@ -223,7 +223,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.token }}
           ID: ${{ env.REPLY }}
         run: |
-          gh api graphql -f query="mutation{ minimizeComment(input: {classifier: RESOLVED, subjectId: '$ID'}){ minimizedComment{ isMinimized }}}"
+          gh api graphql -f query='mutation{ minimizeComment(input: {classifier: RESOLVED, subjectId: "$ID"}){ minimizedComment{ isMinimized }}}'
 
   create:
     name: Branch Rename
