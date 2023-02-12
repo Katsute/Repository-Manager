@@ -319,7 +319,7 @@ jobs:
           done
 
       - name: Initialize Git
-        if: env.new == 'true'
+        if: env.new != 'true'
         env:
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
@@ -330,7 +330,7 @@ jobs:
           git checkout -B "repository-manager-sync"
 
       - name: Copy Files
-        if: env.new == 'true'
+        if: env.new != 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
         run: |
@@ -341,7 +341,7 @@ jobs:
 
       - name: Sync Files
         uses: actions/github-script@v6
-        if: env.new == 'true'
+        if: env.new != 'true'
         with:
           github-token: ${{ secrets.token }}
           script: |
