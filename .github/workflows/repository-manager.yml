@@ -306,15 +306,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
         run: |
-          pr=$(gh pr view "repository-manager-sync")
-
-          if [[ $pr = "no pull requests found for branch *" ]]
-          then
-            echo "new=true" >> $GITHUB_ENV
-          fi
+          gh pr view "repository-manager-sync"
+          echo "new=$?" >> $GITHUB_ENV
 
       - name: Initialize Git
-        if: env.new == 'true'
+        if: env.new == '1'
         env:
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
@@ -325,7 +321,7 @@ jobs:
           git checkout -B "repository-manager-sync"
 
       - name: Copy Files
-        if: env.new == 'true'
+        if: env.new == '1'
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
         run: |
@@ -336,7 +332,7 @@ jobs:
 
       - name: Sync Files
         uses: actions/github-script@v6
-        if: env.new == 'true'
+        if: env.new == '1'
         with:
           github-token: ${{ secrets.token }}
           script: |
