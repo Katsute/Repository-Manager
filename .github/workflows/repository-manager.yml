@@ -303,6 +303,7 @@ jobs:
           token: ${{ secrets.token }}
 
       - name: Check For PR
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
         run: |
