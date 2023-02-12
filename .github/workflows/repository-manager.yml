@@ -303,15 +303,23 @@ jobs:
           token: ${{ secrets.token }}
 
       - name: Check For PR
-        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
+          OWNER: ${{ github.event.repository.owner.login }}
+          REPO: ${{ github.event.repository.name }}
         run: |
-          gh pr view "repository-manager-sync"
-          echo "new=$?" >> $GITHUB_ENV
+          branches=$(gh api -H "Accept: application/vnd.github+json" /repos/$OWNER/$REPO/branches --jq ".[].name")
+
+          for branch in ${branches// /}
+          do
+              if [[ $branch == "repository-manager-sync" ]]
+              then
+                  echo "new=true" >> $GITHUB_ENV
+              fi
+          done
 
       - name: Initialize Git
-        if: env.new == '1'
+        if: env.new == 'true'
         env:
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
@@ -322,7 +330,7 @@ jobs:
           git checkout -B "repository-manager-sync"
 
       - name: Copy Files
-        if: env.new == '1'
+        if: env.new == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
         run: |
@@ -333,7 +341,7 @@ jobs:
 
       - name: Sync Files
         uses: actions/github-script@v6
-        if: env.new == '1'
+        if: env.new == 'true'
         with:
           github-token: ${{ secrets.token }}
           script: |
