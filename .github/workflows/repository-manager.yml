@@ -411,7 +411,7 @@ jobs:
 
             if(fs.existsSync("README.md")){
               fs.copyFileSync("README.md", "repo-manager-tmp-README.md");
-              let buf = fs.readFileSync("repo-manager-tmp-README.md");
+              let buf = fs.readFileSync("repo-manager-tmp-README.md", "utf-8");
 
               { // copilot
                 const token = "<!-- Copilot -->";
