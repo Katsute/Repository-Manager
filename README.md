@@ -29,3 +29,9 @@ Single workflow to manage all repositories.
  * `push` push empty commit
  * `approve` approve pull request
  * `reject` reject pull request
+
+<!-- Copilot -->
+<!-- Copilot -->
+
+<!-- Contributors -->
+<!-- Contributors -->

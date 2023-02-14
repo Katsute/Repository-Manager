@@ -367,6 +367,9 @@ jobs:
       - name: Sync Files
         uses: actions/github-script@v6
         if: env.new != 'true'
+        env:
+          OWNER: ${{ github.event.repository.owner.login }}
+          REPO: ${{ github.event.repository.name }}
         with:
           github-token: ${{ secrets.token }}
           script: |
@@ -380,6 +383,7 @@ jobs:
                 changed = true;
                 fs.copyFileSync(latest, local);
               }
+              fs.unlinkSync(latest);
             };
 
             // mkdir
@@ -405,6 +409,67 @@ jobs:
 
             // readme
 
+            if(fs.existsSync("README.md")){
+              fs.copyFileSync("README.md", "repo-manager-tmp-README.md");
+              let buf = fs.readFileSync("repo-manager-tmp-README.md");
+
+              { // copilot
+                const token = String.regexSafe(`<!-- Copilot -->`);
+                const table =
+                  `<table>
+                      <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-dark.png#gh-dark-mode-only" width="50">
+                      <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-light.png#gh-light-mode-only" width="50">
+                      <p>GitHub Copilot is <b>strictly prohibited</b> on this repository.<br>Pulls using this will be rejected.</p>
+                  </table>`;
+                buf = buf.replace(new RegExp(`^${token}$.*?^${token}$`, "gms"), `${token}\n${table.trim()}\n${token}`);
+              }
+
+              { // contributors
+                const contributors = (await github.rest.repos.listContributors({
+                    owner: process.env.OWNER,
+                    repo: process.env.REPO,
+                    per_page: 100
+                })).data;
+
+                const token = String.regexSafe(`<!-- Contributors -->`);
+
+                let table = '';
+                table += `<div align="center">`;
+                table += "\n    <table>";
+                let c = 0;
+
+                for(const contributor of contributors){
+                  if(!contributor.login.endsWith("[bot]") && contributor.contributions >= 4){
+                    c++;
+                    if(c % 5 === 1) table += "\n        <tr>";
+
+                    const user = (await github.rest.users.getByUsername({
+                        username: contributor.login
+                    })).data;
+
+                    table += `\n            <td align="center">`;
+                    table += '\n' +
+                      `                <a href="https://https.github.com/${contributor.login}">
+                                          <img src="https://avatars.githubusercontent.com/u/${contributor.id}?v=4" width="100" alt="${user.name || contributor.login}">
+                                          <br>
+                                          <sup><b>${user.name || contributor.login}</b></sup>
+                                      </a>`;
+                    table += "\n            </td>";
+
+                    if(c % 5 === 0) table += "\n        </tr>";
+                  }
+                  if(!table.endsWith("</tr>")) table += "\n        </tr>";
+                  table += "\n    </table>";
+                  table += "\n</div>";
+                }
+
+                buf = buf.replace(new RegExp(`^${token}$.*?^${token}$`, "gms"), `${token}\n${table.trim()}\n${token}`);
+              }
+
+              compareAndUpdate("README.md", "repo-manager-tmp-README.md");
+
+            }
+
             // copyright
 
             // trim
@@ -413,15 +478,6 @@ jobs:
 
             if(changed)
                 core.exportVariable("changed", "true");
-
-
-      - name: Cleanup
-        if: env.changed == 'true'
-        run: |
-          rm repo-manager-tmp-pr.md
-          rm repo-manager-tmp-release.yml
-          rm repo-manager-tmp-dependabot.yml
-          rm repo-manager-tmp-workflow.yml
 
       - name: Create PR
         if: env.changed == 'true'
