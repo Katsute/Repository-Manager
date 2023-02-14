@@ -466,6 +466,8 @@ jobs:
                 buf = buf.replace(new RegExp(`^${token}$.*?^${token}$`, "gms"), `${token}\n${table.trim()}\n${token}`);
               }
 
+              fs.writeFileSync("repo-manager-tmp-README.md", buf, "utf-8");
+
               compareAndUpdate("README.md", "repo-manager-tmp-README.md");
 
             }
