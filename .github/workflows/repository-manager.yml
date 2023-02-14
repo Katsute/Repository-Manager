@@ -414,7 +414,7 @@ jobs:
               let buf = fs.readFileSync("repo-manager-tmp-README.md");
 
               { // copilot
-                const token = String.regexSafe(`<!-- Copilot -->`);
+                const token = "<!-- Copilot -->";
                 const table =
                   `<table>
                       <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-dark.png#gh-dark-mode-only" width="50">
@@ -431,7 +431,7 @@ jobs:
                     per_page: 100
                 })).data;
 
-                const token = String.regexSafe(`<!-- Contributors -->`);
+                const token = "<!-- Contributors -->";
 
                 let table = '';
                 table += `<div align="center">`;
