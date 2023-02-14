@@ -531,7 +531,7 @@ jobs:
 
       - name: Delete Branch
         env:
-          BRANCH: ${{ github.event.ref }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
           name: ${{ inputs.username }}
           email: ${{ inputs.email }}
         run: |
