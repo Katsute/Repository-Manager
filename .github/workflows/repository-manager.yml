@@ -416,11 +416,11 @@ jobs:
               { // copilot
                 const token = "<!-- Copilot -->";
                 const table =
-                  `<table>
-                      <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-dark.png#gh-dark-mode-only" width="50">
-                      <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-light.png#gh-light-mode-only" width="50">
-                      <p>GitHub Copilot is <b>strictly prohibited</b> on this repository.<br>Pulls using this will be rejected.</p>
-                  </table>`;
+            `<table>
+                <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-dark.png#gh-dark-mode-only" width="50">
+                <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-light.png#gh-light-mode-only" width="50">
+                <p>GitHub Copilot is <b>strictly prohibited</b> on this repository.<br>Pulls using this will be rejected.</p>
+            </table>`;
                 buf = buf.replace(new RegExp(`^${token}$.*?^${token}$`, "gms"), `${token}\n${table.trim()}\n${token}`);
               }
 
@@ -449,11 +449,11 @@ jobs:
 
                     table += `\n            <td align="center">`;
                     table += '\n' +
-                      `                <a href="https://https.github.com/${contributor.login}">
-                                          <img src="https://avatars.githubusercontent.com/u/${contributor.id}?v=4" width="100" alt="${user.name || contributor.login}">
-                                          <br>
-                                          <sup><b>${user.name || contributor.login}</b></sup>
-                                      </a>`;
+            `                <a href="https://https.github.com/${contributor.login}">
+                                <img src="https://avatars.githubusercontent.com/u/${contributor.id}?v=4" width="100" alt="${user.name || contributor.login}">
+                                <br>
+                                <sup><b>${user.name || contributor.login}</b></sup>
+                            </a>`;
                     table += "\n            </td>";
 
                     if(c % 5 === 0) table += "\n        </tr>";
