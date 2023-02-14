@@ -407,6 +407,33 @@ jobs:
 
             compareAndUpdate(path.join(".github", "workflows", "dependabot.yml"), "repo-manager-tmp-dependabot.yml");
 
+            { // dependabot (yml)
+
+              const dependabot = path.join(".github", "dependabot.yml");
+
+              if(fs.existsSync(dependabot)){
+                fs.copyFileSync(dependabot, "repo-manager-tmp-dependabot.yml");
+                let buf = fs.readFileSync("repo-manager-tmp-dependabot.yml");
+
+                buf = buf.replace(/(?<=^    labels:).*?(?=^    \S)/gms, " [dependencies]");
+                buf = buf.replace(/(?<=^    assignees:).*?(?=^    \S)/gms, " [Katsute]");
+
+                let sch = "";
+
+                sch += "\n      interval: daily";
+                sch += `\n      time: "07:00"`;
+                sch += "\n      timezone: US/Eastern";
+
+                buf = buf.replace(/(?<=^    schedule:).*?(?=^    \S)/gms, sch);
+                buf = buf.replace(/(?<=^    open-pull-requests-limit:).*?$/gms, " 10");
+
+                fs.writeFileSync("repo-manager-tmp-dependabot.yml", buf, "utf-8");
+
+                compareAndUpdate(dependabot, "repo-manager-tmp-dependabot.yml");
+              }
+
+            }
+
             // readme
 
             if(fs.existsSync("README.md")){
