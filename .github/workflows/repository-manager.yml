@@ -276,7 +276,7 @@ jobs:
   issue:
     name: Issue Locking
     runs-on: ubuntu-latest
-    if: github.event_name == 'issues'
+    if: github.event_name == 'issues' || github.event_name == 'pull_request'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -413,7 +413,7 @@ jobs:
 
               if(fs.existsSync(dependabot)){
                 fs.copyFileSync(dependabot, "repo-manager-tmp-dependabot.yml");
-                let buf = fs.readFileSync("repo-manager-tmp-dependabot.yml");
+                let buf = fs.readFileSync("repo-manager-tmp-dependabot.yml", "utf-8");
 
                 buf = buf.replace(/(?<=^    labels:).*?(?=^    \S)/gms, " [dependencies]");
                 buf = buf.replace(/(?<=^    assignees:).*?(?=^    \S)/gms, " [Katsute]");
@@ -518,3 +518,24 @@ jobs:
           git push origin HEAD
 
           gh pr create -t "Update repository files" -b ""
+
+  sync_del:
+    name: Sync Files
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.ref == 'repository-manager-sync' && github.event.pull_request
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.token }}
+
+      - name: Delete Branch
+        env:
+          BRANCH: ${{ github.event.ref }}
+          name: ${{ inputs.username }}
+          email: ${{ inputs.email }}
+        run: |
+          git config --global user.name "$name"
+          git config --global user.email "$email"
+
+          git push origin --delete $BRANCH
