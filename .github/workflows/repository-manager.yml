@@ -415,8 +415,8 @@ jobs:
                 fs.copyFileSync(dependabot, "repo-manager-tmp-dependabot.yml");
                 let buf = fs.readFileSync("repo-manager-tmp-dependabot.yml", "utf-8");
 
-                buf = buf.replace(/(?<=^    labels:).*?(?=^    \S)/gms, " [dependencies]");
-                buf = buf.replace(/(?<=^    assignees:).*?(?=^    \S)/gms, " [Katsute]");
+                buf = buf.replace(/(?<=^    labels:).*?(?=^    \S)/gms, " [dependencies]\n");
+                buf = buf.replace(/(?<=^    assignees:).*?(?=^    \S)/gms, " [Katsute]\n");
 
                 let sch = "";
 
@@ -424,7 +424,7 @@ jobs:
                 sch += `\n      time: "07:00"`;
                 sch += "\n      timezone: US/Eastern";
 
-                buf = buf.replace(/(?<=^    schedule:).*?(?=^    \S)/gms, sch);
+                buf = buf.replace(/(?<=^    schedule:).*?(?=^    \S)/gms, sch + '\n');
                 buf = buf.replace(/(?<=^    open-pull-requests-limit:).*?$/gms, " 10");
 
                 fs.writeFileSync("repo-manager-tmp-dependabot.yml", buf, "utf-8");
@@ -520,9 +520,9 @@ jobs:
           gh pr create -t "Update repository files" -b ""
 
   sync_del:
-    name: Sync Files
+    name: Sync Branch Cleanup
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.ref == 'repository-manager-sync' && github.event.pull_request
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request && github.event.pull_request.head.ref == 'repository-manager-sync'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
