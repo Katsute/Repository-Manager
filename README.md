@@ -31,7 +31,25 @@ Single workflow to manage all repositories.
  * `reject` reject pull request
 
 <!-- Copilot -->
+<table>
+    <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-dark.png#gh-dark-mode-only" width="50">
+    <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-light.png#gh-light-mode-only" width="50">
+    <p>GitHub Copilot is <b>strictly prohibited</b> on this repository.<br>Pulls using this will be rejected.</p>
+</table>
 <!-- Copilot -->
 
 <!-- Contributors -->
+<div align="center">
+    <table>
+        <tr>
+            <td align="center">
+                <a href="https://https.github.com/Katsute">
+                    <img src="https://avatars.githubusercontent.com/u/58778985?v=4" width="100" alt="Katsute">
+                    <br>
+                    <sup><b>Katsute</b></sup>
+                </a>
+            </td>
+        </tr>
+    </table>
+</div>
 <!-- Contributors -->
