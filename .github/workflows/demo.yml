@@ -10,7 +10,7 @@ on:
   issue_comment:
     types: [created]
   release:
-    types: [created, published]
+    types: [published]
 
 jobs:
   manager:

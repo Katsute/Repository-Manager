@@ -11,6 +11,13 @@ Single workflow to manage all repositories.
  * `!*` create orphan branch
  * `*@` create SHA branch
  * Sync labels
+ * Release drafting
+
+##### Files
+
+ * Dependabot config
+ * README contributors
+ * README copilot
 
 ##### Sync
 

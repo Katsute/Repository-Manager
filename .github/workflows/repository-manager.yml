@@ -310,12 +310,138 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'closed')
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.token }}
+
+      - name: Get Latest Release
+        uses: actions/github-script@v6
+        env:
+          OWNER: ${{ github.event.repository.owner.login }}
+          REPO: ${{ github.event.repository.name }}
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            const owner = process.env.OWNER;
+            const repo  = process.env.REPO;
+            const release_notes_separator = "#### Release Notes";
+
+            // get latest release
+
+            let latest = (await github.rest.repos.listReleases({owner, repo, per_page: 100})).data[0];
+
+            if(!latest || !latest.draft){ // draft new release
+              const tag = latest ? latest.tag_name : undefined;
+              const dot = tag ? tag.split('.').length : 2;
+
+              const semver = /^(v)?(\d+)(?:\.(\d+))?(?:\.(\d+))?(-.*)?$/gmi;
+
+              const guessNextRelease = (current, increment) => {
+                if(!current) return "1.0.0";
+
+                semver.lastIndex = 0;
+                if(semver.test(current)){
+                    const exec = semver.exec(current)!;
+
+                    const v     = !!exec[1];
+                    const major = parseInt(exec![2]);
+                    const minor = exec[3] ? parseInt(exec[3]) : null;
+                    const patch = exec[4] ? parseInt(exec[4]) : null;
+                    const RC    = exec[5] || null;
+
+                    const nextMajor = increment == "major" ?  major       + +!RC : major;
+                    const nextMinor = increment == "minor" ? (minor || 0) + +!RC : !RC && increment != "patch" ? 0 : minor || 0;
+                    const nextPatch = increment == "patch" ? (patch || 0) + +!RC : !RC                         ? 0 : patch || 0;
+
+                    let semver = "";
+
+                    if(v)
+                        semver += 'v';
+                    // there must always be a major version
+                        semver += nextMajor;
+                    if(minor != null || nextMinor || nextPatch)
+                        semver += '.' + nextMinor;
+                    if(patch != null || nextPatch)
+                        semver += '.' + nextPatch;
+
+                    return semver;
+                }
+                return "1.0.0";
+              };
+
+              const next = guessNextRelease(tag, dot == 0 ? "major" : dot == 1 ? "minor" : "patch"); // guess next semver
+
+              latest = (await github.rest.repos.createRelease({owner, repo, name: next, tag_name: next, draft: true})).data;
+            }
+
+            // generate release body
+
+            let body = (await github.request("POST /repos/{owner}/{repo}/releases/generate-notes", {
+              owner,
+              repo,
+              tag_name: latest.tag_name
+            })).data.body
+              // release title
+              .replace(/^.*(^|\n)## What's Changed(?=\n|$)/gs, config.release_title + '\n')
+              // category title
+              .replace(/^### (?<category>.*)$/gm, '\n' + config.category_title
+                  .replace(/\${(.*?)}/gm, "$$<$1>") + '\n')
+              // new contributors
+              .replace(/^## New Contributors$.*(?=\*\*Full Changelog)/gms, "")
+              // diff
+              .replace(/(?<=^\*\*Full Changelog\*\*: )(https:\/\/github\.com\/[\w-]+\/[\w-]+\/compare\/(.+))$/gm, "[`$2`]($1)")
+              // double newline
+              .replace(/\n\n\n/gm, "\n\n");
+
+            // modify pull entries
+
+            const replaceAsync = async (s, regex, replacer) => {
+              const promises = [];
+              s.replace(regex, (m, ...args) => {
+                  promises.push(replacer(m, ...args));
+                  return m;
+              });
+
+              const strings = await Promise.all(promises);
+              return s.replace(regex, () => strings.shift()!);
+            };
+
+            body = await replaceAsync(
+              body,
+              /^\* (?<title>.+) by @(?<author>[\w-_]+) in https:\/\/github\.com\/(?<owner>[\w-_]+)\/(?<repo>[\w-_]+)\/pull\/(?<number>\d+)$/gm,
+              async (s, title, author, owner, repo, number) => {
+                const pull = (await github.rest.pulls.get({
+                    owner,
+                    repo,
+                    pull_number: +number
+                })).data;
+
+                let buffer = `* ${title} [#${number}](https://github.com/${owner}/${repo}/pull/${number}) ([@${author}](https://github.com/${author}))`;
+
+                if(!pull.body || !pull.body.includes(release_notes_separator))
+                    return buffer;
+
+                const body: string = pull.body.split(release_notes_separator).slice(-1)[0].trim();
+
+                if(body.length == 0)
+                    return buffer;
+
+                const indent: string = "\n  ";
+
+                buffer += indent; // first line indent
+                buffer += body.split('\n').join(indent);
+
+                return buffer;
+              }
+            );
+
+            // update release
+
+            await github.rest.repos.updateRelease({owner, repo, release_id: latest.id, body});
+            // await github.rest.repos.updateRelease({owner, repo, release_id: latest.id, tag_name: latest.tag_name});
 
   sync:
     name: Sync Files
