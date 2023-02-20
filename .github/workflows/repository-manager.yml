@@ -328,7 +328,6 @@ jobs:
             const owner = process.env.OWNER;
             const repo  = process.env.REPO;
             const release_notes_separator = "#### Release Notes";
-            const increment = "minor";
 
             // get latest release
 
@@ -373,7 +372,7 @@ jobs:
                 return "1.0.0";
               };
 
-              const next = guessNextRelease(tag, dot == 0 ? "major" : dot == 1 ? "minor" : "patch"); // guess next semver
+              const next = guessNextRelease(tag, dot == 0 ? "major" : "minor"); // guess next semver
 
               latest = (await github.rest.repos.createRelease({owner, repo, name: next, tag_name: next, draft: true})).data;
             }
