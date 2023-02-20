@@ -328,6 +328,7 @@ jobs:
             const owner = process.env.OWNER;
             const repo  = process.env.REPO;
             const release_notes_separator = "#### Release Notes";
+            const increment = "minor";
 
             // get latest release
 
@@ -342,32 +343,32 @@ jobs:
               const guessNextRelease = (current, increment) => {
                 if(!current) return "1.0.0";
 
-                semverRegex.lastIndex = 0;
                 if(semverRegex.test(current)){
-                    const exec = semverRegex.exec(current);
+                  semverRegex.lastIndex = 0;
+                  const exec = semverRegex.exec(current);
 
-                    const v     = !!exec[1];
-                    const major = parseInt(exec[2]);
-                    const minor = exec[3] ? parseInt(exec[3]) : null;
-                    const patch = exec[4] ? parseInt(exec[4]) : null;
-                    const RC    = exec[5] || null;
+                  const v     = !!exec[1];
+                  const major = parseInt(exec[2]);
+                  const minor = exec[3] ? parseInt(exec[3]) : null;
+                  const patch = exec[4] ? parseInt(exec[4]) : null;
+                  const RC    = exec[5] || null;
 
-                    const nextMajor = increment == "major" ?  major       + +!RC : major;
-                    const nextMinor = increment == "minor" ? (minor || 0) + +!RC : !RC && increment != "patch" ? 0 : minor || 0;
-                    const nextPatch = increment == "patch" ? (patch || 0) + +!RC : !RC                         ? 0 : patch || 0;
+                  const nextMajor = increment == "major" ?  major       + +!RC : major;
+                  const nextMinor = increment == "minor" ? (minor || 0) + +!RC : !RC && increment != "patch" ? 0 : minor || 0;
+                  const nextPatch = increment == "patch" ? (patch || 0) + +!RC : !RC                         ? 0 : patch || 0;
 
-                    let semver = "";
+                  let semver = "";
 
-                    if(v)
-                        semver += 'v';
-                    // there must always be a major version
-                        semver += nextMajor;
-                    if(minor != null || nextMinor || nextPatch)
-                        semver += '.' + nextMinor;
-                    if(patch != null || nextPatch)
-                        semver += '.' + nextPatch;
+                  if(v)
+                      semver += 'v';
+                  // there must always be a major version
+                      semver += nextMajor;
+                  if(minor != null || nextMinor || nextPatch)
+                      semver += '.' + nextMinor;
+                  if(patch != null || nextPatch)
+                      semver += '.' + nextPatch;
 
-                    return semver;
+                  return semver;
                 }
                 return "1.0.0";
               };
