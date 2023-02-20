@@ -391,7 +391,7 @@ jobs:
               // new contributors
               .replace(/^## New Contributors$.*(?=\*\*Full Changelog)/gms, "")
               // diff
-              .replace(/(?<=^\*\*Full Changelog\*\*: )(https:\/\/github\.com\/[\w-]+\/[\w-]+\/compare\/(.+))$/gm, "[`$2`]($1)")
+              .replace(/(?<=^\*\*Full Changelog\*\*: )(https:\/\/github\.com\/[\w-]+\/[\w-]+\/(?:commits|compare)\/(.+))$/gm, "[`$2`]($1)")
               // double newline
               .replace(/\n\n\n/gm, "\n\n");
 
