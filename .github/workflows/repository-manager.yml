@@ -439,7 +439,7 @@ jobs:
 
             // update release
 
-            await github.rest.repos.updateRelease({owner, repo, release_id: latest.id, body});
+            await github.rest.repos.updateRelease({owner, repo, release_id: latest.id, body, tag_name: latest.tag_name});
             // await github.rest.repos.updateRelease({owner, repo, release_id: latest.id, tag_name: latest.tag_name});
 
   sync:
@@ -624,10 +624,6 @@ jobs:
 
             }
 
-            // copyright
-
-            // trim
-
             // export
 
             if(changed)
@@ -655,6 +651,7 @@ jobs:
           token: ${{ secrets.token }}
 
       - name: Delete Branch
+        continue-on-error: true
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           name: ${{ inputs.username }}
