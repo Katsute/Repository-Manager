@@ -387,7 +387,7 @@ jobs:
               // release title
               .replace(/^.*(^|\n)## What's Changed(?=\n|$)/gs, "## Changes" + '\n')
               // category title
-              .replace(/^### (.*)$/gm, '\n' + "### $1")
+              .replace(/^### (.*)$/gm, '\n' + "### $1" + '\n')
               // new contributors
               .replace(/^## New Contributors$.*(?=\*\*Full Changelog)/gms, "")
               // diff
@@ -440,7 +440,6 @@ jobs:
             // update release
 
             await github.rest.repos.updateRelease({owner, repo, release_id: latest.id, body, tag_name: latest.tag_name});
-            // await github.rest.repos.updateRelease({owner, repo, release_id: latest.id, tag_name: latest.tag_name});
 
   sync:
     name: Sync Files
@@ -610,10 +609,11 @@ jobs:
 
                     if(c % 5 === 0) table += "\n        </tr>";
                   }
-                  if(!table.endsWith("</tr>")) table += "\n        </tr>";
-                  table += "\n    </table>";
-                  table += "\n</div>";
                 }
+
+                if(!table.endsWith("</tr>")) table += "\n        </tr>";
+                table += "\n    </table>";
+                table += "\n</div>";
 
                 buf = buf.replace(new RegExp(`^${token}$.*?^${token}$`, "gms"), `${token}\n${table.trim()}\n${token}`);
               }
