@@ -337,14 +337,14 @@ jobs:
               const tag = latest ? latest.tag_name : undefined;
               const dot = tag ? tag.split('.').length : 2;
 
-              const semver = /^(v)?(\d+)(?:\.(\d+))?(?:\.(\d+))?(-.*)?$/gmi;
+              const semverRegex = /^(v)?(\d+)(?:\.(\d+))?(?:\.(\d+))?(-.*)?$/gmi;
 
               const guessNextRelease = (current, increment) => {
                 if(!current) return "1.0.0";
 
-                semver.lastIndex = 0;
-                if(semver.test(current)){
-                    const exec = semver.exec(current);
+                semverRegex.lastIndex = 0;
+                if(semverRegex.test(current)){
+                    const exec = semverRegex.exec(current);
 
                     const v     = !!exec[1];
                     const major = parseInt(exec[2]);
