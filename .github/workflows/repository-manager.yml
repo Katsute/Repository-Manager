@@ -344,10 +344,10 @@ jobs:
 
                 semver.lastIndex = 0;
                 if(semver.test(current)){
-                    const exec = semver.exec(current)!;
+                    const exec = semver.exec(current);
 
                     const v     = !!exec[1];
-                    const major = parseInt(exec![2]);
+                    const major = parseInt(exec[2]);
                     const minor = exec[3] ? parseInt(exec[3]) : null;
                     const patch = exec[4] ? parseInt(exec[4]) : null;
                     const RC    = exec[5] || null;
@@ -406,7 +406,7 @@ jobs:
               });
 
               const strings = await Promise.all(promises);
-              return s.replace(regex, () => strings.shift()!);
+              return s.replace(regex, () => strings.shift());
             };
 
             body = await replaceAsync(
@@ -424,15 +424,15 @@ jobs:
                 if(!pull.body || !pull.body.includes(release_notes_separator))
                     return buffer;
 
-                const body: string = pull.body.split(release_notes_separator).slice(-1)[0].trim();
+                const content = pull.body.split(release_notes_separator).slice(-1)[0].trim();
 
-                if(body.length == 0)
+                if(content.length == 0)
                     return buffer;
 
-                const indent: string = "\n  ";
+                const indent = "\n  ";
 
                 buffer += indent; // first line indent
-                buffer += body.split('\n').join(indent);
+                buffer += content.split('\n').join(indent);
 
                 return buffer;
               }
