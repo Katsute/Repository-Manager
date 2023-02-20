@@ -59,4 +59,7 @@ Single workflow to manage all repositories.
         </tr>
     </table>
 </div>
+        </tr>
+    </table>
+</div>
 <!-- Contributors -->
