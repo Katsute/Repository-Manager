@@ -385,10 +385,9 @@ jobs:
               tag_name: latest.tag_name
             })).data.body
               // release title
-              .replace(/^.*(^|\n)## What's Changed(?=\n|$)/gs, config.release_title + '\n')
+              .replace(/^.*(^|\n)## What's Changed(?=\n|$)/gs, "## Changes" + '\n')
               // category title
-              .replace(/^### (?<category>.*)$/gm, '\n' + config.category_title
-                  .replace(/\${(.*?)}/gm, "$$<$1>") + '\n')
+              .replace(/^### (.*)$/gm, '\n' + "### $1")
               // new contributors
               .replace(/^## New Contributors$.*(?=\*\*Full Changelog)/gms, "")
               // diff
