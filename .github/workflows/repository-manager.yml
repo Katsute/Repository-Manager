@@ -483,10 +483,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
         run: |
-          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/pr.md" -o repo-manager-tmp-pr.md
-          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/release.yml" -o repo-manager-tmp-release.yml
-          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/dependabot.yml" -o repo-manager-tmp-dependabot.yml
-          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/workflow.yml" -o repo-manager-tmp-workflow.yml
+          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/templates/pr.md" -o repo-manager-tmp-pr.md
+          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/templates/release.yml" -o repo-manager-tmp-release.yml
+          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/templates/dependabot.yml" -o repo-manager-tmp-dependabot.yml
+          curl -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" -L "https://api.github.com/repos/Katsute/Repository-Manager/contents/templates/workflow.yml" -o repo-manager-tmp-workflow.yml
 
       - name: Sync Files
         uses: actions/github-script@v6
@@ -568,8 +568,8 @@ jobs:
                 const token = "<!-- Copilot -->";
                 const table =
             `<table>
-                <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-dark.png#gh-dark-mode-only" width="50">
-                <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/KatsuteDev/.github/main/profile/copilot-light.png#gh-light-mode-only" width="50">
+                <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/Katsute/Repository-Manager/main/assets/copilot-dark.png#gh-dark-mode-only" width="50">
+                <img alt="GitHub Copilot" align="left" src="https://raw.githubusercontent.com/Katsute/Repository-Manager/main/assets/copilot-light.png#gh-light-mode-only" width="50">
                 <p>GitHub Copilot is <b>strictly prohibited</b> on this repository.<br>Pulls using this will be rejected.</p>
             </table>`;
                 buf = buf.replace(new RegExp(`^${token}$.*?^${token}$`, "gms"), `${token}\n${table.trim()}\n${token}`);

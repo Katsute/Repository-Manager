@@ -1,0 +1,17 @@
+{
+    "name": "repository-manager",
+    "private": true,
+    "scripts": {
+        "build": "node build.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Katsute/Repository-Manager.git"
+    },
+    "author": "Katsute",
+    "license": "CC-BY-SA-4.0",
+    "bugs": {
+        "url": "https://github.com/Katsute/Repository-Manager/issues"
+    },
+    "homepage": "https://github.com/Katsute/Repository-Manager#readme"
+}
