@@ -5,8 +5,8 @@ const folder = path.join(__dirname, "svg");
 
 const write = (key, color) => {
     let svg =
-        `<svg width="100%" height="1" xmlns="http://www.w3.org/2000/svg">` +
-        `<rect width="100%" height="100%" fill="${color}"/>` +
+        `<svg width="1" height="1" xmlns="http://www.w3.org/2000/svg">` +
+        `<rect width="1" height="1" fill="${color}"/>` +
         `</svg>`;
     fs.writeFileSync(path.join(folder, `${key}.svg`), svg, "utf-8");
 };
