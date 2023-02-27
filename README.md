@@ -30,12 +30,12 @@ Single workflow to manage all repositories.
 
  * `issue <title>` create issue
  * `dispatch <workflow>` | `workflow <workflow>` dispatch workflow
- * `pr` | `pull` duplicate pull request
- * `merge <#pr>` merge into pull request
+ * `pr <title?>` | `pull <title?>` duplicate pull request
+ * `merge <pr>` merge into pull request
  * `sync` | `update` merge master into pull request
  * `push` push empty commit
- * `approve` approve pull request
- * `reject` reject pull request
+ * `approve <message?>` approve pull request
+ * `reject <message?>` reject pull request
 
 <!-- Copilot -->
 <table>
