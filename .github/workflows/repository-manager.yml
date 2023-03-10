@@ -444,7 +444,7 @@ jobs:
   sync:
     name: Sync Files
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'issues' || github.event_name == 'pull_request'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -638,7 +638,7 @@ jobs:
           git commit -m "Update repository files"
           git push origin HEAD
 
-          gh pr create -t "Update repository files" -b ""
+          gh pr create -t "Update repository files" -b "Synched files with [Katsute/Repository-Manager](https://github.com/Katsute/Repository-Manager)" -a "Katsute"
 
   sync_del:
     name: Sync Branch Cleanup
