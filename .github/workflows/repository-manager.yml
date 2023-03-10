@@ -638,7 +638,7 @@ jobs:
           git commit -m "Update repository files"
           git push origin HEAD
 
-          gh pr create -t "Update repository files" -b "Synched files with [Katsute/Repository-Manager](https://github.com/Katsute/Repository-Manager)" -a "Katsute"
+          gh pr create -t "Update repository files" -b "Synced files with [Katsute/Repository-Manager](https://github.com/Katsute/Repository-Manager)" -a "Katsute"
 
   sync_del:
     name: Sync Branch Cleanup
